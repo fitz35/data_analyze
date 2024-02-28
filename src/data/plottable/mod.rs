@@ -1,37 +1,87 @@
 use std::collections::HashMap;
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use crate::data::plottable::key::SerieKey;
 use crate::stats::get_outliers;
 use crate::stats::stats_serie::{MetricName, StatsSerie};
+
+use self::sample::Sample;
 
 use super::filtering::{Filter, Mask};
 use super::plot_data::PlotSeries;
 
 pub mod key;
+pub mod sample;
+
+/// Define plottable data linked to a sample
+pub struct PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : Sample<KeyType>
+
+{
+    samples : Vec<SampleType>,
+    _key_type : std::marker::PhantomData<KeyType>,
+}
+
+impl <SampleType, KeyType> 
+    PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : Sample<KeyType>
+{
+
+    /// Create a new PlottableStruct from a list of file paths (async)
+    pub fn new_async_from_paths(file_paths : Vec<&str>) -> Self{
+        let samples = file_paths.par_iter().flat_map(
+            |path| {
+                if let Ok(sample) = SampleType::new_from_file_path(path) {
+                    Some(sample)
+                } else {
+                    None
+                }
+            }
+        ).collect::<Vec<SampleType>>();
+
+        Self::new(samples)
+    }
 
 
-/// Define a trait for plottable data, indexed with a key
-/// WARN : all the data must be the same size
-pub trait Plottable<Key> where Key : SerieKey{
-
-    /// Get the series of data (as f32) to plot, associated to the given key
-    fn get_numeric_series(&self, key : &Key) -> Vec<f32>;
-
-    /// Get the series of data (as string) to plot, associated to the given key
-    fn get_string_series(&self, key : &Key) -> Vec<String>;
+    pub fn new(samples : Vec<SampleType>) -> Self {
+        Self {
+            samples,
+            _key_type : std::marker::PhantomData,
+        }
+    }
 
     /// Get the number of samples
-    fn get_number_of_samples(&self) -> usize;
+    #[inline]
+    pub fn get_number_of_samples(&self) -> usize {
+        self.samples.len()
+    }
+
+    /// Get the numeric series associated to the given key
+    #[inline]
+    pub fn get_numeric_series(&self, key : &KeyType) -> Vec<f32> {
+        self.samples.iter().map(|sample| sample.get_numeric_value(key)).collect()
+    }
+
+    /// Get the string series associated to the given key
+    #[inline]
+    pub fn get_string_series(&self, key : &KeyType) -> Vec<String> {
+        self.samples.iter().map(|sample| sample.get_string_value(key)).collect()
+    }
 
     /// aggregate the data and sort each point by legend
     /// Apply also the filters and remove the outliers
     /// NOTE : the data is aggregated by the x_serie_key if aggregation_metrics is Some
-    fn aggregate(&self, 
-        x_serie_key : &Key,
-        y_serie_key : &Key,
-        filters : &Option<Vec<&Filter<Key>>>,
+    pub fn aggregate(&self, 
+        x_serie_key : &KeyType,
+        y_serie_key : &KeyType,
+        filters : &Option<Vec<&Filter<KeyType>>>,
         legends : &Vec<String>,
-        remove_outliers : &Option<Vec<Key>>,
+        remove_outliers : &Option<Vec<KeyType>>,
         aggregation_metrics : Option<MetricName>,
     ) -> Result<PlotSeries, Box<dyn std::error::Error>> 
     where
@@ -66,12 +116,11 @@ pub trait Plottable<Key> where Key : SerieKey{
 
     }
 
-
     /// combine the filters with the remove_outliers, and return the combined mask
-    fn combine_filter(
+    pub fn combine_filter(
         &self,
-        filters : &Option<Vec<&Filter<Key>>>,
-        remove_outliers : &Option<Vec<Key>>,
+        filters : &Option<Vec<&Filter<KeyType>>>,
+        remove_outliers : &Option<Vec<KeyType>>,
     ) -> Mask 
     where 
         Self : Sized,
@@ -102,18 +151,16 @@ pub trait Plottable<Key> where Key : SerieKey{
         filter_mask
     }
 
-
-
     /// Collect statistics for multiple series sorted by a the uniquee value of a specified key.
     /// This function is optimized for speed but not for memory (O(n)).
     /// Warning: Avoid calling this function multiple times with different metrics as it may be slow.
-    fn collect_stats_sorted_by_unique_values(
+    pub fn collect_stats_sorted_by_unique_values(
         &self, 
-        stats_serie_keys : &Vec<Key>, 
-        sort_value_key : &Key
-    ) -> HashMap<String, HashMap<Key, StatsSerie>>
+        stats_serie_keys : &Vec<KeyType>, 
+        sort_value_key : &KeyType
+    ) -> HashMap<String, HashMap<KeyType, StatsSerie>>
     {
-        let mut serie_by_key:HashMap<Key, HashMap<String, StatsSerie>>  = HashMap::new();
+        let mut serie_by_key:HashMap<KeyType, HashMap<String, StatsSerie>>  = HashMap::new();
         let sort_serie = if sort_value_key.is_numeric() {
             self.get_numeric_series(sort_value_key).iter().map(|f| f.to_string()).collect::<Vec<String>>()
         }else{
@@ -151,6 +198,4 @@ pub trait Plottable<Key> where Key : SerieKey{
 
         return serie_by_sort;
     }
-
 }
-

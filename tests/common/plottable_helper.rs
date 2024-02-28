@@ -9,9 +9,11 @@ use serde_derive::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 use std::fmt::{Display, Formatter};
-use plot_helper::data::plottable::{SerieKey, Plottable};
 use plot_helper::stats::stats_serie::MetricName;
 use plot_helper::data::filtering::Mask;
+use plot_helper::data::plottable::key::SerieKey;
+use plot_helper::data::plottable::sample::Sample;
+use plot_helper::data::plottable::PlottableStruct;
 
 
 use crate::common::stats_helper::TestSerie;
@@ -73,73 +75,102 @@ macro_rules! generate_plot_key {
                     self.get_display_name().cmp(&other.get_display_name())
                 }
             }
-        )*
 
-        /// Struct that contains all the stats from the json files
-        #[derive(Clone, Serialize, Deserialize, Debug)]
-        pub struct AllStats {
-            $(
-                $($struct_name : Vec<f32>),*
-            ),*
-        }
 
-        impl AllStats {
-            pub fn new() -> Self {
-                $(
+            paste::item! {
+                pub struct [< Sample$key_name >] {
                     $(
-                        let $struct_name = {
-                            let test_serie = TestSerie::new($json_path);
-                            test_serie.data
-                        };
+                        $struct_name : f32,
                     )*
-                    
-
-                )*
-
-                Self {
-                    $(
-                        $($struct_name),*
-                    ),*
                 }
-            }
-        }
 
-        $(
-            // all the keys are plottable, and numeric
-            impl Plottable<$key_name> for AllStats {
-                fn get_numeric_series(&self, key : &$key_name) -> Vec<f32> {
-                    match key {
-                        $($key_name::$variant => {
-                            self.$struct_name.clone()
-                        }),*
+                // all the keys are plottable, and numeric
+                impl Sample<$key_name> for [< Sample$key_name >] {
+                    fn new_from_file_path(_file_path : &str) -> Result<Self, Box<dyn std::error::Error>> {
+                        unimplemented!()
+                    }
+
+                    fn get_numeric_value(&self, key : &$key_name) -> f32 {
+                        match key {
+                            $($key_name::$variant => {
+                                self.$struct_name.clone()
+                            }),*
+                        }
+                    }
+
+                    fn get_string_value(&self, _key : &$key_name) -> String {
+                        panic!("Not a string serie");
                     }
                 }
 
-                fn get_string_series(&self, _key : &$key_name) -> Vec<String> {
-                    panic!("Not a string serie");
-                }
-
-                fn get_number_of_samples(&self) -> usize {
-                    let mut res = 0;
+                /// Struct that contains all the stats from the json files
+                #[derive(Clone, Serialize, Deserialize, Debug)]
+                pub struct [< AllStats$key_name >] {
                     $(
-                        res = std::cmp::max(res, self.$struct_name.len());
+                        $struct_name : Vec<f32>,
                     )*
-                    res
+                    length : usize,
                 }
-            }
-        )*
 
-        $(
-            /// helper to get the test serie from the json files
-            impl TestSerieGetter<$key_name> for AllStats {
-                fn get_test_serie(&self, key : &$key_name) -> TestSerie {
-                    match key {
-                        $($key_name::$variant => {
-                            serde_json::from_str(fs::read_to_string($json_path).unwrap().as_str()).unwrap()
-                        }),*
+                impl [< AllStats$key_name >]{
+                    pub fn new() -> Self {
+                        let mut length = 0;
+
+                        $( 
+                            let $struct_name = {
+                                let test_serie = TestSerie::new($json_path);
+                                test_serie.data
+                            };
+
+                            if length == 0 {
+                                length = $struct_name.len();
+                            } else {
+                                assert_eq!($struct_name.len(), length);
+                            }
+                        )*
+
+                        Self {
+                            
+                            $($struct_name),*,
+
+                            length,
+                            
+                        }
+                    }
+
+                    pub fn get_plottable(&self) -> PlottableStruct<[< Sample$key_name >], $key_name> {
+                        let mut samples = Vec::new();
+                        for i in 0..self.length {
+                            let sample = [< Sample$key_name >] {
+                                $($struct_name : self.$struct_name[i],)*
+                            };
+                            samples.push(sample);
+                        }
+                        PlottableStruct::new(samples)
+                    }
+
+                    /*pub fn get_numeric_series(&self, key : &$key_name) -> Vec<f32> {
+                        match key {
+                            $($key_name::$variant => {
+                                self.$struct_name.clone()
+                            }),*
+                        }
+                    }*/
+                }
+
+                /// helper to get the test serie from the json files
+                impl TestSerieGetter<$key_name> for [< AllStats$key_name >] {
+                    fn get_test_serie(&self, key : &$key_name) -> TestSerie {
+                        match key {
+                            $($key_name::$variant => {
+                                serde_json::from_str(fs::read_to_string($json_path).unwrap().as_str()).unwrap()
+                            }),*
+                        }
                     }
                 }
             }
+
+            
         )*
 
         #[cfg(test)]
@@ -153,10 +184,11 @@ macro_rules! generate_plot_key {
                         /// test the data integrity of the serie
                         #[test]
                         fn [< dummy_mask_$struct_name _test>]() -> Result<(), Box<dyn std::error::Error>>{
-                            let all_stats = AllStats::new();
-                            let data_size = Plottable::<$key_name>::get_number_of_samples(&all_stats);
+                            let all_stats = [< AllStats$key_name >]::new();
+                            let data = all_stats.get_plottable();
+                            let data_size = data.get_number_of_samples();
                             let dummy_data = vec![0.0; data_size];
-                            let filter_mask : Mask = Plottable::<$key_name>::combine_filter(&all_stats, &None, &None);
+                            let filter_mask : Mask = data.combine_filter(&None, &None);
                             let filtered_data = filter_mask.apply(&dummy_data);
 
                             assert_eq!(filtered_data.len(), data_size);
@@ -171,8 +203,9 @@ macro_rules! generate_plot_key {
                         /// test the data integrity of the serie
                         #[test]
                         fn [< data_integrity_$struct_name _test>]() -> Result<(), Box<dyn std::error::Error>>{
-                            let all_stats = AllStats::new();
-                            let data_size = Plottable::<$key_name>::get_number_of_samples(&all_stats);
+                            let all_stats = [< AllStats$key_name >]::new();
+                            let data = all_stats.get_plottable();
+                            let data_size = data.get_number_of_samples();
                             let test_serie = all_stats.get_test_serie(&$key_name::$variant);
 
                             assert_eq!(test_serie.data.len(), data_size);
@@ -185,10 +218,11 @@ macro_rules! generate_plot_key {
                         /// test the aggregation of the serie
                         #[test]
                         fn [< aggregate_$struct_name _test>]() -> Result<(), Box<dyn std::error::Error>>{
-                            let all_stats = AllStats::new();
-                            let legends = vec!["all".to_string(); Plottable::<$key_name>::get_number_of_samples(&all_stats)];
+                            let all_stats = [< AllStats$key_name >]::new();
+                            let data = all_stats.get_plottable();
+                            let legends = vec!["all".to_string(); data.get_number_of_samples()];
                             let aggregation = 
-                                all_stats.aggregate(
+                                data.aggregate(
                                     &$key_name::Constant, 
                                     &$key_name::$variant, 
                                     &None, 

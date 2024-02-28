@@ -1,7 +1,5 @@
 use std::fmt::Display;
 
-
-
 /// Define a trait for a key of a serie
 pub trait SerieKey : Eq + std::hash::Hash + Copy + Display + Ord{
     /// get the display name of the serie
@@ -24,8 +22,8 @@ pub trait SerieKey : Eq + std::hash::Hash + Copy + Display + Ord{
 /// ```
 /// use serde_derive::{Deserialize, Serialize};
 /// use std::fmt::{Display, Formatter};
-/// use plot_helper::data::plottable::SerieKey;
 /// use plot_helper::generate_plot_key;
+/// use plot_helper::data::plottable::key::SerieKey;
 /// generate_plot_key!(
 ///     MultiLineQueryKey[
 ///         ParsingTime { "parsing time (s)", Numeric},
@@ -111,9 +109,9 @@ macro_rules! generate_plot_key {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use serde_derive::{Deserialize, Serialize};
     use std::fmt::{Display, Formatter};
-    use crate::data::plottable::SerieKey;
     #[test]
     fn test_generate_plot_key() {
         generate_plot_key!(TestKey[
