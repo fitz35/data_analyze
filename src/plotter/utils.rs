@@ -7,7 +7,8 @@ use plotters::drawing::DrawingArea;
 use plotters::element::Circle;
 use plotters::style::{Color, Palette, PaletteColor, BLACK, WHITE};
 
-use crate::data::plottable::SerieKey;
+use crate::data::plottable::key::SerieKey;
+
 
 
 pub struct CustomPalette;

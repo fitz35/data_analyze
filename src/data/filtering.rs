@@ -1,4 +1,6 @@
-use super::plottable::SerieKey;
+use crate::data::plottable::key::SerieKey;
+
+
 
 /// define a mask, true to keep the data
 pub struct Mask {

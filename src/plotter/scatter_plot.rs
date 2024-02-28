@@ -9,7 +9,8 @@ use plotters::style::{Color, IntoFont, Palette, PaletteColor, WHITE};
 
 use crate::data::filtering::Filter;
 use crate::data::plot_data::Layout;
-use crate::data::plottable::{Plottable, SerieKey};
+use crate::data::plottable::key::SerieKey;
+use crate::data::plottable::Plottable;
 use crate::params::{FIGURE_CAPTION_FONT_SIZE, LABEL_HORIZONTAL_SIZE, ONE_FIG_SIZE};
 
 use super::utils::{write_legend, CustomPalette};
