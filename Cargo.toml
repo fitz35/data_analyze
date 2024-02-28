@@ -1,0 +1,29 @@
+[package]
+name = "plot_helper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[package.metadata]
+# Include test resources
+test_resources = ["tests/test_data"]
+
+
+[dependencies]
+
+# legacy
+lazy_static = "1.4.0"
+serde = "1.0.159"
+serde_derive = "1.0.159"
+serde_json = "1.0.94"
+# log
+log = "0.4.20"
+test-log = "0.2.14"
+
+# plot
+plotters = "0.3.3"
+
+[dev-dependencies]
+paste = "1.0.14" # concatenate macro identifier
+approx = "0.5.1"

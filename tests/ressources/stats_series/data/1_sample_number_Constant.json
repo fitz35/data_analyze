@@ -1,0 +1,10 @@
+{
+    "name": "1_sample_number_Constant",
+    "data": [
+        1.0
+    ],
+    "mean": 1.0,
+    "median": 1.0,
+    "q_1": 1.0,
+    "q_3": 1.0
+}
