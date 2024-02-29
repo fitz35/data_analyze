@@ -92,7 +92,7 @@ where
 
         // define the chart
 
-        let caption = format!("{} per {}", x_serie_key.get_display_name(), y_serie_key.get_display_name());
+        let caption = format!("{} per {}", y_serie_key.get_display_name(), x_serie_key.get_display_name());
         let mut chart = ChartBuilder::on(&root)
             .caption(caption.as_str(), ("sans-serif", FIGURE_CAPTION_FONT_SIZE).into_font())
             .margin(5)
