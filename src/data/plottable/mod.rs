@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+use serde_derive::{Deserialize, Serialize};
 
 use crate::data::plottable::key::SerieKey;
 use crate::stats::get_outliers;
@@ -161,7 +162,7 @@ where
 }
 
 /// Define a mean to load the data from a list of file paths if this is a SimpleSample
-pub trait PlottableSamplesFromPaths<SampleType, KeyType> 
+pub trait PlottableSimpleSamplesFromPaths<SampleType, KeyType> 
 where
     Self : PlottableSamples<SampleType, KeyType>,
     SampleType : SimpleSample<KeyType>,
@@ -207,6 +208,7 @@ where
 }
 
 /// Define plottable data linked to a sample (wrapper for the sample data on Plottable)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PlottableStruct<SampleType, KeyType>
 where 
     KeyType : SerieKey,
@@ -218,7 +220,7 @@ where
 }
 
 impl<SampleType, KeyType> 
-    PlottableSamplesFromPaths<SampleType, KeyType>
+    PlottableSimpleSamplesFromPaths<SampleType, KeyType>
 for PlottableStruct<SampleType, KeyType>
 where 
     KeyType : SerieKey,
