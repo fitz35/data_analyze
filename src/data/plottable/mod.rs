@@ -146,28 +146,29 @@ where
 }
 
 
-
-/// Define plottable data linked to a sample (wrapper for the sample data on Plottable)
-pub struct PlottableStruct<SampleType, KeyType>
-where 
-    KeyType : SerieKey,
-    SampleType : Sample<KeyType>
-
+/// Define a trait to regroup the samples into a plottable
+pub trait PlottableSamples<SampleType, KeyType> 
+where
+    Self : Plottable<KeyType> + Sized,
+    SampleType : Sample<KeyType>,
+    KeyType : SerieKey
 {
-    samples : Vec<SampleType>,
-    _key_type : std::marker::PhantomData<KeyType>,
+    /// Create a new PlottableSamples from a list of sample
+    fn new(samples : Vec<SampleType>) -> Self;
+
+    /// get the samples
+    fn get_samples(&self) -> &Vec<SampleType>;
 }
 
-// simple sample implementation of PlottableStruct
-
-impl <SampleType, KeyType> 
-    PlottableStruct<SampleType, KeyType>
-where 
-    KeyType : SerieKey,
-    SampleType : SimpleSample<KeyType>
+/// Define a mean to load the data from a list of file paths if this is a SimpleSample
+pub trait PlottableSamplesFromPaths<SampleType, KeyType> 
+where
+    Self : PlottableSamples<SampleType, KeyType>,
+    SampleType : SimpleSample<KeyType>,
+    KeyType : SerieKey
 {
-    /// Create a new PlottableStruct from a list of file paths (async)
-    pub fn new_async_from_paths(file_paths : &Vec<String>) -> Self{
+    /// Create a new PlottableSamples from a list of file paths (async)
+    fn new_async_from_paths(file_paths : &Vec<String>) -> Self {
         let samples = file_paths.par_iter().flat_map(
             |path| {
                 if let Ok(sample) = SampleType::new_from_file_path(path) {
@@ -182,16 +183,15 @@ where
     }
 }
 
-
-// multiple sample implementation of PlottableStruct
-impl <SampleType, KeyType> 
-    PlottableStruct<SampleType, KeyType>
-where 
-    KeyType : SerieKey,
-    SampleType : MultipleSample<KeyType>
+/// Define a mean to load the data from a list of file paths if this is a MultipleSample
+pub trait PlottableMultipleSamplesFromPaths<SampleType, KeyType> 
+where
+    Self : PlottableSamples<SampleType, KeyType>,
+    SampleType : MultipleSample<KeyType>,
+    KeyType : SerieKey
 {
-    /// Create a new PlottableStruct from a list of file paths (async)
-    pub fn multiple_new_async_from_paths(file_paths : &Vec<String>) -> Self{
+    /// Create a new PlottableSamples from a list of file paths (async)
+    fn new_async_from_paths(file_paths : &Vec<String>) -> Self {
         let samples = file_paths.par_iter().flat_map(
             |path| {
                 if let Ok(samples) = SampleType::new_from_file_path(path) {
@@ -205,6 +205,18 @@ where
         Self::new(samples)
     }
 }
+
+/// Define plottable data linked to a sample (wrapper for the sample data on Plottable)
+pub struct PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : Sample<KeyType>
+
+{
+    samples : Vec<SampleType>,
+    _key_type : std::marker::PhantomData<KeyType>,
+}
+
 
 impl<SampleType, KeyType> 
     Plottable<KeyType>
@@ -226,19 +238,21 @@ where
     }
 }
 
-
-
-
 impl <SampleType, KeyType> 
-    PlottableStruct<SampleType, KeyType>
+    PlottableSamples<SampleType, KeyType>
+for PlottableStruct<SampleType, KeyType>
 where 
     KeyType : SerieKey,
     SampleType : Sample<KeyType>
 {
-    pub fn new(samples : Vec<SampleType>) -> Self {
+    fn new(samples : Vec<SampleType>) -> Self {
         Self {
             samples,
             _key_type : std::marker::PhantomData,
         }
+    }
+
+    fn get_samples(&self) -> &Vec<SampleType> {
+        &self.samples
     }
 }

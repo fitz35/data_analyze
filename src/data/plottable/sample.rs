@@ -21,6 +21,7 @@ pub trait Sample<Key>
 
 }
 
+
 /// Define a constructeur for a simple sample per file
 pub trait SimpleSample<KeyType> 
 where

@@ -15,6 +15,7 @@ use plot_helper::data::plottable::key::SerieKey;
 use plot_helper::data::plottable::sample::Sample;
 use plot_helper::data::plottable::PlottableStruct;
 use plot_helper::data::plottable::Plottable;
+use plot_helper::data::plottable::PlottableSamples;
 
 
 use crate::common::stats_helper::TestSerie;
