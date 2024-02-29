@@ -34,7 +34,7 @@ where
     SampleType : SimpleSample<KeyType>
 {
     /// Create a new PlottableStruct from a list of file paths (async)
-    pub fn new_async_from_paths(file_paths : Vec<&str>) -> Self{
+    pub fn new_async_from_paths(file_paths : &Vec<String>) -> Self{
         let samples = file_paths.par_iter().flat_map(
             |path| {
                 if let Ok(sample) = SampleType::new_from_file_path(path) {
@@ -58,7 +58,7 @@ where
     SampleType : MultipleSample<KeyType>
 {
     /// Create a new PlottableStruct from a list of file paths (async)
-    pub fn multiple_new_async_from_paths(file_paths : Vec<&str>) -> Self{
+    pub fn multiple_new_async_from_paths(file_paths : &Vec<String>) -> Self{
         let samples = file_paths.par_iter().flat_map(
             |path| {
                 if let Ok(samples) = SampleType::new_from_file_path(path) {
