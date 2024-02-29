@@ -13,7 +13,7 @@ use crate::data::plottable::key::SerieKey;
 use crate::data::plottable::Plottable;
 use crate::params::{FIGURE_CAPTION_FONT_SIZE, LABEL_HORIZONTAL_SIZE, ONE_FIG_SIZE};
 
-use super::utils::{write_legend, CustomPalette};
+use super::utils::{axe_number_formater, write_legend, CustomPalette};
 
 
 /// plot the given data
@@ -95,8 +95,8 @@ where
         chart.configure_mesh()
             .x_desc(x_serie_key.get_display_name().as_str())
             .y_desc(y_serie_key.get_display_name().as_str())
-            .x_label_formatter(&|x| format!("{:+e}", x))
-            .y_label_formatter(&|y| format!("{:+e}", y))
+            .x_label_formatter(&axe_number_formater)
+            .y_label_formatter(&axe_number_formater)
             .draw()?;
 
 
