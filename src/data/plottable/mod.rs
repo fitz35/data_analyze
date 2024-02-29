@@ -6,7 +6,7 @@ use crate::data::plottable::key::SerieKey;
 use crate::stats::get_outliers;
 use crate::stats::stats_serie::{MetricName, StatsSerie};
 
-use self::sample::Sample;
+use self::sample::{MultipleSample, Sample, SimpleSample};
 
 use super::filtering::{Filter, Mask};
 use super::plot_data::PlotSeries;
@@ -25,13 +25,14 @@ where
     _key_type : std::marker::PhantomData<KeyType>,
 }
 
+// simple sample implementation of PlottableStruct
+
 impl <SampleType, KeyType> 
     PlottableStruct<SampleType, KeyType>
 where 
     KeyType : SerieKey,
-    SampleType : Sample<KeyType>
+    SampleType : SimpleSample<KeyType>
 {
-
     /// Create a new PlottableStruct from a list of file paths (async)
     pub fn new_async_from_paths(file_paths : Vec<&str>) -> Self{
         let samples = file_paths.par_iter().flat_map(
@@ -46,8 +47,39 @@ where
 
         Self::new(samples)
     }
+}
 
 
+// multiple sample implementation of PlottableStruct
+impl <SampleType, KeyType> 
+    PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : MultipleSample<KeyType>
+{
+    /// Create a new PlottableStruct from a list of file paths (async)
+    pub fn multiple_new_async_from_paths(file_paths : Vec<&str>) -> Self{
+        let samples = file_paths.par_iter().flat_map(
+            |path| {
+                if let Ok(samples) = SampleType::new_from_file_path(path) {
+                    Some(samples)
+                } else {
+                    None
+                }
+            }
+        ).flatten().collect::<Vec<SampleType>>();
+
+        Self::new(samples)
+    }
+}
+
+
+impl <SampleType, KeyType> 
+    PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : Sample<KeyType>
+{
     pub fn new(samples : Vec<SampleType>) -> Self {
         Self {
             samples,

@@ -86,10 +86,6 @@ macro_rules! generate_plot_key {
 
                 // all the keys are plottable, and numeric
                 impl Sample<$key_name> for [< Sample$key_name >] {
-                    fn new_from_file_path(_file_path : &str) -> Result<Self, Box<dyn std::error::Error>> {
-                        unimplemented!()
-                    }
-
                     fn get_numeric_value(&self, key : &$key_name) -> f32 {
                         match key {
                             $($key_name::$variant => {
