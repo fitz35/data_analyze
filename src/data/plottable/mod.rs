@@ -217,6 +217,25 @@ where
     _key_type : std::marker::PhantomData<KeyType>,
 }
 
+impl<SampleType, KeyType> 
+    PlottableSamplesFromPaths<SampleType, KeyType>
+for PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : SimpleSample<KeyType>
+{
+
+}
+
+impl<SampleType, KeyType> 
+    PlottableMultipleSamplesFromPaths<SampleType, KeyType>
+for PlottableStruct<SampleType, KeyType>
+where 
+    KeyType : SerieKey,
+    SampleType : MultipleSample<KeyType>
+{
+
+}
 
 impl<SampleType, KeyType> 
     Plottable<KeyType>
