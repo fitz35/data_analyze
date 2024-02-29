@@ -14,6 +14,7 @@ use plot_helper::data::filtering::Mask;
 use plot_helper::data::plottable::key::SerieKey;
 use plot_helper::data::plottable::sample::Sample;
 use plot_helper::data::plottable::PlottableStruct;
+use plot_helper::data::plottable::Plottable;
 
 
 use crate::common::stats_helper::TestSerie;

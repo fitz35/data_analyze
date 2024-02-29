@@ -10,8 +10,7 @@ use plotters::style::{Color, IntoFont, Palette, PaletteColor, WHITE};
 use crate::data::filtering::Filter;
 use crate::data::plot_data::Layout;
 use crate::data::plottable::key::SerieKey;
-use crate::data::plottable::sample::Sample;
-use crate::data::plottable::PlottableStruct;
+use crate::data::plottable::Plottable;
 use crate::params::{FIGURE_CAPTION_FONT_SIZE, LABEL_HORIZONTAL_SIZE, ONE_FIG_SIZE};
 use crate::stats::stats_serie::MetricName;
 
@@ -29,8 +28,8 @@ use super::utils::{write_legend, CustomPalette};
 /// NOTE : the number of series to plot must be equal to the number of subplots
 /// NOTE : If remove_outliers is Some, the outliers will be removed from the data with the given key
 /// NOTE : The aggregation_metrics is the metric used to aggregate the data with the same x value
-pub fn line_plot<SampleType, Key>(
-    data : &PlottableStruct<SampleType, Key>, 
+pub fn line_plot<Key>(
+    data : &dyn Plottable<Key>, 
     legend_serie_key : Option<Key>,
     save_path : &str,
     layout : &Layout,
@@ -40,8 +39,7 @@ pub fn line_plot<SampleType, Key>(
     remove_outliers : Option<Vec<Key>>,
     aggregation_metric : MetricName,
 ) -> Result<(), Box<dyn std::error::Error>> 
-where 
-    SampleType : Sample<Key>,
+where
     Key : SerieKey,
 {
     if series.len() != layout.get_nb_of_subplots() {

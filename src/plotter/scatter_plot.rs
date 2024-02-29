@@ -10,8 +10,7 @@ use plotters::style::{Color, IntoFont, Palette, PaletteColor, WHITE};
 use crate::data::filtering::Filter;
 use crate::data::plot_data::Layout;
 use crate::data::plottable::key::SerieKey;
-use crate::data::plottable::sample::Sample;
-use crate::data::plottable::PlottableStruct;
+use crate::data::plottable::Plottable;
 use crate::params::{FIGURE_CAPTION_FONT_SIZE, LABEL_HORIZONTAL_SIZE, ONE_FIG_SIZE};
 
 use super::utils::{write_legend, CustomPalette};
@@ -22,8 +21,8 @@ use super::utils::{write_legend, CustomPalette};
 /// If filter is Some, the data will be filtered by the given key and the given function (true to keep the data)
 /// NOTE : the number of series to plot must be equal to the number of subplots
 /// NOTE : If remove_outliers is Some, the outliers will be removed from the data with the given key
-pub fn scatter_plot<SampleType, Key>(
-    data : &PlottableStruct<SampleType, Key>, 
+pub fn scatter_plot<Key>(
+    data : &dyn Plottable<Key>, 
     legend_serie_key : Option<Key>,
     save_path : &str,
     layout : &Layout,
@@ -33,7 +32,6 @@ pub fn scatter_plot<SampleType, Key>(
     remove_outliers : Option<Vec<Key>>,
 ) -> Result<(), Box<dyn std::error::Error>> 
 where
-    SampleType : Sample<Key>,
     Key : SerieKey,
 {
     if series.len() != layout.get_nb_of_subplots() {
