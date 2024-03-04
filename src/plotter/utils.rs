@@ -96,11 +96,12 @@ where
     Ok(())
 }
 
+const TRESHOLD : f32 = 1000.0;
 
 /// Format a number to a string
 pub(crate) fn axe_number_formater(x: &f32) -> String {
     let x = *x;
-    if x < -100.0 || (x > -0.01 && x < 0.01) || x > 100.0 {
+    if x < -TRESHOLD || (x > -1.0/TRESHOLD && x < 1.0/TRESHOLD) || x > TRESHOLD {
         format!("{:.0e}", x)
     } else {
         format!("{:.2}", x)
