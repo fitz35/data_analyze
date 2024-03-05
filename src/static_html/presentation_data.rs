@@ -192,5 +192,23 @@ impl ArrayElement {
             data
         }
     }
+
+    pub fn from_csv(path : &str) -> ArrayElement {
+        let mut reader = csv::Reader::from_path(path).unwrap();
+        let mut header = Vec::new();
+        let mut data = Vec::new();
+        for result in reader.records() {
+            let record = result.unwrap();
+            if header.is_empty() {
+                header = record.iter().map(|s| s.to_string()).collect();
+            } else {
+                data.push(record.iter().map(|s| s.to_string()).collect());
+            }
+        }
+        ArrayElement {
+            header,
+            data
+        }
+    }
 }
 
