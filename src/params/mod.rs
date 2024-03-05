@@ -11,3 +11,4 @@ pub const FIGURE_CAPTION_FONT_SIZE : u32 = 30;
 
 
 
+pub const RESSOURCES_DIR : &str = "ressources";

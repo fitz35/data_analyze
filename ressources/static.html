@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Files analyze</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        #table-of-contents {
+            
+            position: fixed;
+            left: 10px;
+            top: 0px;
+            padding: 15px;
+            background: #f2f4f6;
+            z-index: 999999;
+            max-width: 250px;
+            box-shadow: 0px 0px 2px rgb(0 0 0 / 20%);
+            max-height: 100%;
+            overflow-y: auto;
+
+        }
+
+        #table-of-contents a {
+            text-decoration: none;
+            color: #000;
+        }
+
+        #table-of-contents a:hover {
+            text-decoration: underline;
+        }
+
+        #table-of-contents-h1 {
+            font-size: 20px;
+            margin-top: 0;
+        }
+
+        #content {
+            margin-left: 400px
+        }
+
+        h1 {
+            font-size: 50px;
+            text-decoration: underline;
+        }
+
+        h2 {
+            font-size: 40px;
+            margin-top: 20px;
+            margin-left: 10px;
+            text-decoration: underline;
+        }
+
+        h3 {
+            font-size: 30px;
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+
+        p {
+            font-size: 20px;
+            margin-top: 10px;
+            margin-left: 30px;
+        }
+
+        ul {
+            list-style: none;
+            margin: 0; /* Remove default margin */
+            padding: 0; /* Remove default padding */
+            font-weight: bold;
+        }
+
+        ul ul {
+            margin-left: 30px;
+            font-weight: normal;
+        }
+
+        ul ul ul {
+            margin-left: 60px;
+        }
+
+        ul ul ul ul {
+            margin-left: 90px;
+        }
+
+        /* First-level indentation */
+        .indent-level-1 {
+            margin-left: 20px;
+        }
+
+        /* Second-level indentation */
+        .indent-level-2 {
+            margin-left: 40px;
+        }
+
+        /* Third-level indentation */
+        .indent-level-3 {
+            margin-left: 60px;
+        }
+
+
+        /* Define a class for the table */
+        .custom-table {
+            width: 100%; /* Set the table width to 100% of its container */
+            border-collapse: collapse; /* Collapse the borders of the table cells */
+        }
+
+        /* Style the header cells (th) */
+        .custom-table th {
+            background-color: #05a8fa; /* Set the background color to cyan */
+            color: white; /* Set the text color to white */
+            font-weight: bold; /* Make the text bold */
+            padding: 10px; /* Add some padding to the header cells for spacing */
+            text-align: center; /* Center-align the text within header cells */
+            border: 1px solid #ddd; /* Add a border to the header cells */
+        }
+
+        /* Style the data cells (td) */
+        .custom-table td {
+            padding: 10px; /* Add some padding to the data cells for spacing */
+            text-align: center; /* Center-align the text within data cells */
+            border: 1px solid #ddd; /* Add a border to the data cells */
+        }
+
+
+    </style>
+</head>
+<body>
+    <div id="table-of-contents">
+        <h1 id="table-of-contents-h1">Table of Contents</h1>
+        <!--table of contents-->
+        <!--
+            <ul>
+            <li><a href="#section1">Section 1</a>
+                <ul>
+                    <li><a href="#subsection1.1">Subsection 1.1</a></li>
+                    <li><a href="#subsection1.2">Subsection 1.2</a></li>
+                </ul>
+            </li>
+            <li><a href="#section2">Section 2</a>
+                <ul>
+                    <li><a href="#subsection2.1">Subsection 2.1</a></li>
+                </ul>
+            </li>
+        </ul>
+    -->
+    </div>
+    <div id="content">
+
+        <!--contents-->
+        <!-- 
+            <h1 id="section1">Section 1</h1>
+            <p>Your content for section 1 goes here.</p>
+
+            <h2 id="section2">Subsection 1.1</h2>
+            <p>Your content for subsection 1.1 goes here.</p>
+
+            <h2 id="section3">Subsection 1.2</h2>
+            <p>Your content for subsection 1.2 goes here.</p>
+        -->
+       
+    </div>
+
+
+    <script>
+        function toggleCollapseContent(element) {
+            var content = element.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+            } else {
+                content.style.display = "block";
+            }
+        }
+    </script>
+</body>
+</html>
