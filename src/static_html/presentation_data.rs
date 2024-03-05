@@ -106,6 +106,13 @@ pub struct Element {
     pub(crate) content : ContentElement
 }
 
+impl Into<ContentElement> for Element {
+    fn into(self) -> ContentElement {
+        ContentElement::Elements(ListElement::from(self))
+    }
+}
+
+
 impl Element {
 
     pub fn new(title : String, content : ContentElement) -> Element {
