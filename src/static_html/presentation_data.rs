@@ -71,6 +71,10 @@ impl ListElement {
             elements
         }
     }
+
+    pub fn add_element(&mut self, element : Element) {
+        self.elements.push(element);
+    }
 }
 
 /// represent an element (title associated with content)
