@@ -57,11 +57,25 @@ pub struct ListElement {
     pub(crate) elements : Vec<Element>,
 }
 
+impl From<Element> for ListElement {
+    fn from(element : Element) -> ListElement {
+        ListElement {
+            elements : vec![element]
+        }
+    }
+}
+
 impl From<Vec<Element>> for ListElement {
     fn from(elements : Vec<Element>) -> ListElement {
         ListElement {
             elements
         }
+    }
+}
+
+impl Into<ContentElement> for ListElement {
+    fn into(self) -> ContentElement {
+        ContentElement::Elements(self)
     }
 }
 
@@ -93,6 +107,7 @@ pub struct Element {
 }
 
 impl Element {
+
     pub fn new(title : String, content : ContentElement) -> Element {
         Element {
             title,
