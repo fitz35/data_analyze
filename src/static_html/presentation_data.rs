@@ -49,6 +49,11 @@ impl Ir {
     pub fn add_elements(&mut self, element : ListElement) {
         self.elements.elements.extend(element.elements);
     }
+
+    pub fn add_element(&mut self, element : Element) {
+        self.elements.elements.push(element);
+    
+    }
 }
 
 /// represent a list of elements
