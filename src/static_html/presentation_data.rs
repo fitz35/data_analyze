@@ -25,6 +25,14 @@ impl From<ListElement> for Ir {
     }
 }
 
+impl Default for Ir {
+    fn default() -> Self {
+        Ir {
+            elements : ListElement::new(Vec::new())
+        }
+    }
+}
+
 impl Ir {
     /// convert the intermediate representation to html
     pub fn to_html(&self) -> Result<String, Box<dyn std::error::Error>> {
