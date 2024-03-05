@@ -65,6 +65,14 @@ impl From<Vec<Element>> for ListElement {
     }
 }
 
+impl Default for ListElement {
+    fn default() -> Self {
+        ListElement {
+            elements : Vec::new()
+        }
+    }
+}
+
 impl ListElement {
     pub fn new(elements : Vec<Element>) -> ListElement {
         ListElement {
