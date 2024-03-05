@@ -185,6 +185,12 @@ pub struct ArrayElement{
     pub(crate) data : Vec<Vec<String>>,
 }
 
+impl Into<ContentElement> for ArrayElement {
+    fn into(self) -> ContentElement {
+        ContentElement::Array(self)
+    }
+}
+
 impl ArrayElement {
     pub fn new(header : Vec<String>, data : Vec<Vec<String>>) -> ArrayElement {
         ArrayElement {
