@@ -1,7 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use super::presentation_data::{ArrayElement, CollapsableElement, ContentElement, Element, ListElement, TextElement, TextLinkElement};
+use super::presentation_data::{Array, Collapsable, Content, ContentElement, Element, ListElement, Text, TextLink};
 
 
 fn calculate_hash<T: Hash>(t: &T) -> u64 {
@@ -14,17 +14,17 @@ fn calculate_hash<T: Hash>(t: &T) -> u64 {
 /// This trait is used to convert the data to html and to get the table of content
 pub trait ToHtmlDepth {
     fn to_html(&self, depth : usize) -> String;
-    fn get_table_of_content(&self, depth : usize) -> Option<String>;
 }
 
 impl ToHtmlDepth for String {
     fn to_html(&self, _depth : usize) -> String {
         self.clone()
     }
+}
 
-    fn get_table_of_content(&self, _depth : usize) -> Option<String> {
-        None
-    }
+/// this trait is used to get the table of content
+pub trait ToTableOfContent {
+    fn get_table_of_content(&self, depth : usize) -> String;
 }
 
 impl ToHtmlDepth for ListElement {
@@ -32,48 +32,71 @@ impl ToHtmlDepth for ListElement {
         let result = self.elements.iter().map(|e| e.to_html(depth)).collect::<Vec<String>>().join("\n");
         result
     }
+}
 
-    fn get_table_of_content(&self, depth : usize) -> Option<String> {
+impl ToTableOfContent for ListElement {
+    fn get_table_of_content(&self, depth : usize) -> String {
         let mut result = String::new();
         result.push_str("<ul>");
-        for e in self.elements.iter() {
-            if let Some(e) = e.get_table_of_content(depth) {
-                result.push_str(&e);
-            }
+        for element in self.elements.iter() {
+            let toc = element.get_table_of_content(depth);
+            result.push_str(&toc);
         }
         result.push_str("</ul>");
 
-        Some(result)
+        result
     }
+    
 }
-
 
 impl ToHtmlDepth for Element {
     fn to_html(&self, depth : usize) -> String {
         let hash = calculate_hash(&self).to_string();
         let mut result = String::new();
         result.push_str(&format!("<h{} id=\"{}\">{}</h{}>", depth, hash, &self.title, depth));
-        result.push_str(&self.content.to_html(depth + 1));
+        for e in self.content.iter() {
+            result.push_str(&e.to_html(depth + 1));
+        }
         result
     }
+}
 
-    fn get_table_of_content(&self, depth : usize) -> Option<String> {
+impl ToTableOfContent for Element {
+    fn get_table_of_content(&self, depth : usize) -> String {
         let hash = calculate_hash(&self).to_string();
         let href = format!("#{}", hash);
         let mut result = String::new();
         result.push_str(&format!("<li><a href=\"{}\">- {}</a></li>", href, &self.title));
-        if let Some(e) = self.content.get_table_of_content(depth + 1) {
-            result.push_str(&e);
+        for e in self.content.iter() {
+            let toc = e.get_table_of_content(depth + 1);
+            result.push_str(&toc);
         }
-        Some(result)
+        result
     }
 }
-
 
 impl ToHtmlDepth for ContentElement {
     fn to_html(&self, depth : usize) -> String {
         match self {
-            ContentElement::Text(t) => {
+            ContentElement::Content(c) => c.to_html(depth),
+            ContentElement::Element(e) => e.to_html(depth),
+        }
+    }
+}
+
+impl ToTableOfContent for ContentElement {
+    fn get_table_of_content(&self, depth : usize) -> String {
+        match self {
+            ContentElement::Content(_) => String::new(),
+            ContentElement::Element(e) => e.get_table_of_content(depth),
+        }
+    }
+}
+
+impl ToHtmlDepth for Content {
+    fn to_html(&self, depth : usize) -> String {
+        match self {
+            Content::Text(t) => {
                 let mut result = String::new();
                 result.push_str("<div>");
                 for e in t.iter() {
@@ -82,24 +105,16 @@ impl ToHtmlDepth for ContentElement {
                 result.push_str("</div>");
                 result
             },
-            ContentElement::Image(s) => {
+            Content::Image(s) => {
                 format!("<img src=\"{}\"/>", s).to_html(depth)
             },
-            ContentElement::Array(a) => a.to_html(depth),
-            ContentElement::Collapsable(e) => e.to_html(depth),
-            ContentElement::Elements(e) => e.to_html(depth),
-        }
-    }
-
-    fn get_table_of_content(&self, depth : usize) -> Option<String> {
-        match self {
-            ContentElement::Elements(e) => e.get_table_of_content(depth),
-            _ => None
+            Content::Array(a) => a.to_html(depth),
+            Content::Collapsable(e) => e.to_html(depth),
         }
     }
 }
 
-impl ToHtmlDepth for CollapsableElement {
+impl ToHtmlDepth for Collapsable {
     fn to_html(&self, depth : usize) -> String {
         let mut result = String::new();
         result.push_str(&format!("<details><summary>{}</summary>", &self.summary));
@@ -109,38 +124,26 @@ impl ToHtmlDepth for CollapsableElement {
         result.push_str("</details>");
         result
     }
-
-    fn get_table_of_content(&self, _depth : usize) -> Option<String> {
-        None
-    }
 }
 
-impl ToHtmlDepth for TextElement {
+impl ToHtmlDepth for Text {
     fn to_html(&self, depth : usize) -> String {
         match self {
-            TextElement::Raw(s) => s.to_html(depth),
-            TextElement::Link(l) => l.to_html(depth),
+            Text::Raw(s) => s.to_html(depth),
+            Text::Link(l) => l.to_html(depth),
         }
-    }
-
-    fn get_table_of_content(&self, _depth : usize) -> Option<String> {
-        None
     }
 }
 
 
-impl ToHtmlDepth for TextLinkElement {
+impl ToHtmlDepth for TextLink {
     fn to_html(&self, depth : usize) -> String {
         format!("<a href=\"{}\">{}</a>", &self.href, &self.text).to_html(depth)
     }
-
-    fn get_table_of_content(&self, _depth : usize) -> Option<String> {
-        None
-    }
 }
 
 
-impl ToHtmlDepth for ArrayElement {
+impl ToHtmlDepth for Array {
     fn to_html(&self, _depth : usize) -> String {
         let mut result = String::new();
         result.push_str("<table class=\"custom-table\">");
@@ -162,9 +165,5 @@ impl ToHtmlDepth for ArrayElement {
         result.push_str("</tbody>");
         result.push_str("</table>");
         result
-    }
-
-    fn get_table_of_content(&self, _depth : usize) -> Option<String> {
-        None
     }
 }

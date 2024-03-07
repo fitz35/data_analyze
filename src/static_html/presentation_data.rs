@@ -7,9 +7,9 @@ use serde_derive::{Deserialize, Serialize};
 
 use crate::params::RESSOURCES_DIR;
 
-use super::to_html::ToHtmlDepth;
+use super::to_html::{ToHtmlDepth, ToTableOfContent};
 
-
+// ------------------------------------- Ir -------------------------------------
 
 /// This is the intermediate representation of the presentation data
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
@@ -28,7 +28,7 @@ impl From<ListElement> for Ir {
 impl Default for Ir {
     fn default() -> Self {
         Ir {
-            elements : ListElement::new(Vec::new())
+            elements : ListElement::default()
         }
     }
 }
@@ -39,7 +39,7 @@ impl Ir {
         let html_template_path = Path::new(RESSOURCES_DIR).join("static.html");
         let mut html_template = fs::read_to_string(html_template_path)?;
         let html_content = self.elements.to_html(1);
-        let table_of_content = self.elements.get_table_of_content(1).unwrap();
+        let table_of_content = self.elements.get_table_of_content(1);
         html_template = html_template.replace("<!--table of contents-->", &table_of_content);
         html_template = html_template.replace("<!--contents-->", &html_content);
 
@@ -54,7 +54,15 @@ impl Ir {
         self.elements.elements.push(element);
     
     }
+
+    /// Wrapper around the new_from_dir function of ListElement
+    pub fn new_from_file_system(path : &str) -> Result<Ir, Box<dyn std::error::Error>> {
+        Ok(ListElement::new_from_dir(path)?.into())
+    }
 }
+
+// ------------------------------------- ListElement -------------------------------------
+
 
 /// represent a list of elements
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
@@ -62,25 +70,11 @@ pub struct ListElement {
     pub(crate) elements : Vec<Element>,
 }
 
-impl From<Element> for ListElement {
-    fn from(element : Element) -> ListElement {
-        ListElement {
-            elements : vec![element]
-        }
-    }
-}
-
 impl From<Vec<Element>> for ListElement {
     fn from(elements : Vec<Element>) -> ListElement {
         ListElement {
             elements
         }
-    }
-}
-
-impl Into<ContentElement> for ListElement {
-    fn into(self) -> ContentElement {
-        ContentElement::Elements(self)
     }
 }
 
@@ -93,118 +87,231 @@ impl Default for ListElement {
 }
 
 impl ListElement {
-    pub fn new(elements : Vec<Element>) -> ListElement {
-        ListElement {
-            elements
-        }
-    }
-
     pub fn add_element(&mut self, element : Element) {
         self.elements.push(element);
     }
+
+    pub fn add_elements(&mut self, elements : ListElement) {
+        self.elements.extend(elements.elements);
+    }
+
+    /// Get a new list element from a directory
+    /// WARN : return an error if the path is not a directory and if the directory does not contain only directories
+    pub fn new_from_dir(path : &str) -> Result<ListElement, Box<dyn std::error::Error>> {
+        let mut elements = Vec::new();
+        for entry in fs::read_dir(path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if !path.is_dir() {
+                return Err("the directory should only contain directories".into());
+            }
+            elements.push(Element::new_from_dir(path.to_str().unwrap())?);
+        }
+        Ok(elements.into())
+    }
 }
+
+// ------------------------------------- Element -------------------------------------
 
 /// represent an element (title associated with content)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
 pub struct Element {
     pub(crate) title : String,
-    pub(crate) content : ContentElement
-}
-
-impl Into<ContentElement> for Element {
-    fn into(self) -> ContentElement {
-        ContentElement::Elements(ListElement::from(self))
-    }
+    pub(crate) content : Vec<ContentElement>
 }
 
 
 impl Element {
 
-    pub fn new(title : String, content : ContentElement) -> Element {
+    pub fn new(title : String, content : Vec<ContentElement>) -> Element {
         Element {
             title,
             content
         }
     }
+
+    /// Get a new element from a directory
+    pub fn new_from_dir(path : &str) -> Result<Element, Box<dyn std::error::Error>> {
+        let path_o = Path::new(path);
+        let title = path_o.file_name().unwrap().to_str().unwrap().to_string();
+        let mut content = Vec::new();
+        for entry in fs::read_dir(path_o)? {
+            let entry = entry?;
+            let path = entry.path();
+            content.push(ContentElement::new_from_path(path.to_str().unwrap())?);
+        }
+        Ok(Element::new(title, content))
+    }
 }
 
+// ------------------------------------- ContentElement -------------------------------------
+
+/// represent a content element (content or element)
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+pub enum ContentElement {
+    Content(Content),
+    Element(Element),
+}
+
+impl ContentElement {
+    pub fn new_from_path(path : &str) -> Result<ContentElement, Box<dyn std::error::Error>> {
+        let path_o = Path::new(path);
+        if path_o.is_dir() {
+            Ok(Element::new_from_dir(path)?.into())
+        } else {
+            Ok(Content::new_from_path(path)?.into())
+        }
+    }
+}
+
+impl From<Content> for ContentElement {
+    fn from(content : Content) -> ContentElement {
+        ContentElement::Content(content)
+    }
+}
+
+impl From<Element> for ContentElement {
+    fn from(element : Element) -> ContentElement {
+        ContentElement::Element(element)
+    }
+}
+
+// ------------------------------------- Content -------------------------------------
 
 /// handle the content of an elkeemnt (text or link
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub enum ContentElement {
-    Text(Vec<TextElement>),
+pub enum Content {
+    Text(Vec<Text>),
     Image(String),
-    Array(ArrayElement),
-    Collapsable(CollapsableElement),
-    Elements(ListElement),
+    Array(Array),
+    Collapsable(Collapsable)
 }
 
+impl Content {
+    /// Create a new image with the path on the file system
+    pub fn new_image(path : &str) -> Content {
+        Content::Image(path.to_string())
+    }
 
+    /// Create a new content from a path
+    pub fn new_from_path(path : &str) -> Result<Content, Box<dyn std::error::Error>> {
+        let path_o = Path::new(path);
+        if path_o.is_file() {
+            let extension = path_o.extension();
+            if let Some(extension) = extension {
+                let extension = extension.to_str().unwrap();
+                match extension {
+                    "csv" => Ok(Array::from_csv(path).into()),
+                    "png" | "jpg" | "jpeg" => Ok(Content::new_image(path)),
+                    _ => {
+                        let content : Content = serde_json::from_str(&fs::read_to_string(path)?)?;
+                        Ok(content)
+                    }
+                }
+            } else {
+                let content : Content = serde_json::from_str(&fs::read_to_string(path)?)?;
+                Ok(content)
+            }
+        } else {
+            Err("the path should be a file".into())
+        }
+    }
+}
+
+impl From<Vec<Text>> for Content {
+    fn from(text : Vec<Text>) -> Content {
+        Content::Text(text)
+    }
+}
+
+impl From<Array> for Content {
+    fn from(array : Array) -> Content {
+        Content::Array(array)
+    }
+}
+
+impl From<Collapsable> for Content {
+    fn from(collapsable : Collapsable) -> Content {
+        Content::Collapsable(collapsable)
+    }
+}
+
+// ------------------------------------- Content -------------------------------------
+
+// ************************ Collapsable
 
 /// represent a collapsable element
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub struct CollapsableElement {
+pub struct Collapsable {
     pub(crate) summary : String,
     /// NOTE : the content of the collapsable element is not a list of elements but a list of content elements, avoid the including in the table of content
-    pub(crate) content : Vec<ContentElement>,
+    pub(crate) content : Vec<Content>,
 }
 
-impl CollapsableElement {
-    pub fn new(summary : String, content : Vec<ContentElement>) -> CollapsableElement {
-        CollapsableElement {
+impl Collapsable {
+    pub fn new(summary : String, content : Vec<Content>) -> Collapsable {
+        Collapsable {
             summary,
             content
         }
     }
 }
 
+// ************************ TextElement
 
 /// represent a text element
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub enum TextElement {
+pub enum Text {
     Raw(String),
-    Link(TextLinkElement),
+    Link(TextLink),
+}
+
+impl From<String> for Text {
+    fn from(s : String) -> Text {
+        Text::Raw(s)
+    }
+}
+
+impl From<TextLink> for Text {
+    fn from(l : TextLink) -> Text {
+        Text::Link(l)
+    }
 }
 
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub struct TextLinkElement {
+pub struct TextLink {
     pub(crate) href : String,
     pub(crate) text : String,
 }
 
-impl TextLinkElement {
-    pub fn new(href : String, text : String) -> TextLinkElement {
-        TextLinkElement {
+impl TextLink {
+    pub fn new(href : String, text : String) -> TextLink {
+        TextLink {
             href,
             text
         }
     }
 }
 
+// ************************ ArrayElement
+
 /// represent an array of elements
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub struct ArrayElement{
+pub struct Array{
     pub(crate) header : Vec<String>,
     pub(crate) data : Vec<Vec<String>>,
 }
 
-impl Into<ContentElement> for ArrayElement {
-    fn into(self) -> ContentElement {
-        ContentElement::Array(self)
-    }
-}
-
-impl ArrayElement {
-    pub fn new(header : Vec<String>, data : Vec<Vec<String>>) -> ArrayElement {
-        ArrayElement {
+impl Array {
+    pub fn new(header : Vec<String>, data : Vec<Vec<String>>) -> Array {
+        Array {
             header,
             data
         }
     }
 
-    pub fn from_csv(path : &str) -> ArrayElement {
+    pub fn from_csv(path : &str) -> Array {
         let mut reader = csv::Reader::from_path(path).unwrap();
         let mut header = Vec::new();
         let mut data = Vec::new();
@@ -216,7 +323,7 @@ impl ArrayElement {
                 data.push(record.iter().map(|s| s.to_string()).collect());
             }
         }
-        ArrayElement {
+        Array {
             header,
             data
         }
