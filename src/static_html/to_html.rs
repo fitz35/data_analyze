@@ -167,7 +167,7 @@ impl ToHtmlDepth for Array {
         result.push_str("<thead>");
         result.push_str("<tr>");
         for e in self.header.iter() {
-            result.push_str(&format!("<th>{}</th>", e));
+            result.push_str(&format!("<th>{}</th>", format_title(e)));
         }
         result.push_str("</tr>");
         result.push_str("</thead>");

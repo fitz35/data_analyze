@@ -4,7 +4,8 @@ use plotters::backend::BitMapBackend;
 use plotters::chart::{ChartBuilder, SeriesLabelPosition};
 use plotters::coord::Shift;
 use plotters::drawing::DrawingArea;
-use plotters::element::Circle;
+use plotters::element::{Circle, EmptyElement, Text};
+use plotters::series::PointSeries;
 use plotters::style::{Color, Palette, PaletteColor, BLACK, WHITE};
 
 use crate::data::plottable::key::SerieKey;
@@ -63,6 +64,19 @@ where
         .configure_mesh()
         .disable_mesh()
         .draw()?;
+
+    if let Some(legend_serie_key) = legend_serie_key {
+        
+        label_chart.draw_series(PointSeries::of_element(
+            vec![(0, 1)],
+            0,
+            &BLACK,
+            &|coord, _, _| {
+                EmptyElement::at(coord)
+                    + Text::new(format!("{}", legend_serie_key.get_display_name()), (0, 15), ("sans-serif", 15))
+            }
+        ))?;
+    }
 
     let dummy_data : Vec<(i32, i32)> = Vec::new();
     let mut unique_legends = legend_to_color.keys().collect::<Vec<_>>();
