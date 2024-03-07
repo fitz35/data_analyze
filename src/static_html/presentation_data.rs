@@ -13,7 +13,7 @@ use super::to_html::{ToHtmlDepth, ToTableOfContent};
 // ------------------------------------- Ir -------------------------------------
 
 /// This is the intermediate representation of the presentation data
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct Ir {
     pub(crate) elements : ListElement
 }
@@ -60,13 +60,17 @@ impl Ir {
     pub fn new_from_file_system(path : &str) -> Result<Ir, Box<dyn std::error::Error>> {
         Ok(ListElement::new_from_dir(path)?.into())
     }
+
+    pub fn get_elements(&self) -> &ListElement {
+        &self.elements
+    }
 }
 
 // ------------------------------------- ListElement -------------------------------------
 
 
 /// represent a list of elements
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct ListElement {
     pub(crate) elements : Vec<Element>,
 }
@@ -110,12 +114,16 @@ impl ListElement {
         }
         Ok(elements.into())
     }
+
+    pub fn get_elements(&self) -> &Vec<Element> {
+        &self.elements
+    }
 }
 
 // ------------------------------------- Element -------------------------------------
 
 /// represent an element (title associated with content)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct Element {
     pub(crate) title : String,
     pub(crate) content : Vec<ContentElement>
@@ -136,19 +144,28 @@ impl Element {
         let path_o = Path::new(path);
         let title = path_o.file_name().unwrap().to_str().unwrap().to_string();
         let mut content = Vec::new();
-        for entry in fs::read_dir(path_o)? {
-            let entry = entry?;
+        let mut entries = fs::read_dir(path_o)?.collect::<Result<Vec<_>, _>>()?;
+        entries.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+        for entry in entries {
             let path = entry.path();
             content.push(ContentElement::new_from_path(path.to_str().unwrap())?);
         }
         Ok(Element::new(title, content))
+    }
+
+    pub fn get_title(&self) -> &String {
+        &self.title
+    }
+
+    pub fn get_content(&self) -> &Vec<ContentElement> {
+        &self.content
     }
 }
 
 // ------------------------------------- ContentElement -------------------------------------
 
 /// represent a content element (content or element)
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub enum ContentElement {
     Content(Content),
     Element(Element),
@@ -183,7 +200,7 @@ const COLLAPSABLE_EXTENSION : &str = "collapsable";
 const TEXT_EXTENSION : &str = "text";
 
 /// handle the content of an elkeemnt (text or link
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub enum Content {
     Text(Text),
     Image(String),
@@ -244,7 +261,7 @@ impl From<Collapsable<Content>> for Content {
 // ************************ Collapsable
 
 /// represent a collapsable element
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct Collapsable<InnerContent> 
 where InnerContent : SerdeSerialize
 {
@@ -261,6 +278,14 @@ where T : SerdeSerialize
             summary,
             content
         }
+    }
+
+    pub fn get_summary(&self) -> &String {
+        &self.summary
+    }
+
+    pub fn get_content(&self) -> &Vec<T> {
+        &self.content
     }
 }
 
@@ -286,7 +311,7 @@ impl Collapsable<Content>{
 
 // ************************ Text
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct Text(Vec<TextContent>);
 
 impl From<Vec<TextContent>> for Text {
@@ -321,7 +346,7 @@ impl Text {
 
 
 /// represent a text element
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub enum TextContent {
     Raw(String),
     Link(TextLink),
@@ -353,7 +378,7 @@ impl From<Collapsable<TextContent>> for TextContent {
 }
 
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct TextLink {
     pub(crate) href : String,
     pub(crate) text : String,
@@ -366,12 +391,20 @@ impl TextLink {
             text
         }
     }
+
+    pub fn get_href(&self) -> &String {
+        &self.href
+    }
+
+    pub fn get_text(&self) -> &String {
+        &self.text
+    }
 }
 
 // ************************ ArrayElement
 
 /// represent an array of elements
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash, Eq, PartialOrd, Ord)]
 pub struct Array{
     pub(crate) header : Vec<String>,
     pub(crate) data : Vec<Vec<String>>,
@@ -386,10 +419,10 @@ impl Array {
     }
 
     pub fn from_csv(path : &str) -> Array {
-        let mut reader = csv::Reader::from_path(path).unwrap();
+        let mut csv_reader = csv::ReaderBuilder::new().has_headers(false).from_path(path).unwrap();
         let mut header = Vec::new();
         let mut data = Vec::new();
-        for result in reader.records() {
+        for result in csv_reader.records() {
             let record = result.unwrap();
             if header.is_empty() {
                 header = record.iter().map(|s| s.to_string()).collect();
@@ -401,6 +434,14 @@ impl Array {
             header,
             data
         }
+    }
+
+    pub fn get_header(&self) -> &Vec<String> {
+        &self.header
+    }
+
+    pub fn get_data(&self) -> &Vec<Vec<String>> {
+        &self.data
     }
 }
 
