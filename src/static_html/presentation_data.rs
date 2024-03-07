@@ -328,6 +328,12 @@ pub enum TextContent {
     Collapsable(Collapsable<TextContent>)
 }
 
+impl From<&str> for TextContent {
+    fn from(s : &str) -> TextContent {
+        TextContent::Raw(s.to_string())
+    }
+}
+
 impl From<String> for TextContent {
     fn from(s : String) -> TextContent {
         TextContent::Raw(s)
