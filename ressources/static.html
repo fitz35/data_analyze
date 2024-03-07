@@ -9,7 +9,22 @@
             margin: 0;
             padding: 0;
         }
+        summary {
+            background-color: #777;
+            color: white;
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            border: none;
+            text-align: left;
+            outline: none;
+            font-size: 15px;
+        }
 
+        summary:hover {
+            background-color: #555;
+        }
+        
         #table-of-contents {
             
             position: fixed;
@@ -164,17 +179,5 @@
         -->
        
     </div>
-
-
-    <script>
-        function toggleCollapseContent(element) {
-            var content = element.nextElementSibling;
-            if (content.style.display === "block") {
-                content.style.display = "none";
-            } else {
-                content.style.display = "block";
-            }
-        }
-    </script>
 </body>
 </html>
