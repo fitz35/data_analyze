@@ -1,7 +1,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use super::presentation_data::{Array, Collapsable, Content, ContentElement, Element, ListElement, Text, TextLink};
+use super::presentation_data::{Array, Collapsable, Content, ContentElement, Element, ListElement, Text, TextContent, TextLink};
 
 
 fn calculate_hash<T: Hash>(t: &T) -> u64 {
@@ -96,15 +96,7 @@ impl ToTableOfContent for ContentElement {
 impl ToHtmlDepth for Content {
     fn to_html(&self, depth : usize) -> String {
         match self {
-            Content::Text(t) => {
-                let mut result = String::new();
-                result.push_str("<div>");
-                for e in t.iter() {
-                    result.push_str(&e.to_html(depth));
-                }
-                result.push_str("</div>");
-                result
-            },
+            Content::Text(t) => t.to_html(depth),
             Content::Image(s) => {
                 format!("<img src=\"{}\"/>", s).to_html(depth)
             },
@@ -128,9 +120,19 @@ impl ToHtmlDepth for Collapsable {
 
 impl ToHtmlDepth for Text {
     fn to_html(&self, depth : usize) -> String {
+        let mut result = String::new();
+        for e in self.get_content().iter() {
+            result.push_str(&e.to_html(depth));
+        }
+        result
+    }
+}
+
+impl ToHtmlDepth for TextContent {
+    fn to_html(&self, depth : usize) -> String {
         match self {
-            Text::Raw(s) => s.to_html(depth),
-            Text::Link(l) => l.to_html(depth),
+            TextContent::Raw(s) => s.to_html(depth),
+            TextContent::Link(l) => l.to_html(depth),
         }
     }
 }

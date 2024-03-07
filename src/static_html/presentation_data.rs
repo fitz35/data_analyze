@@ -178,10 +178,13 @@ impl From<Element> for ContentElement {
 
 // ------------------------------------- Content -------------------------------------
 
+const COLLAPSABLE_EXTENSION : &str = "collapsable";
+const TEXT_EXTENSION : &str = "text";
+
 /// handle the content of an elkeemnt (text or link
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
 pub enum Content {
-    Text(Vec<Text>),
+    Text(Text),
     Image(String),
     Array(Array),
     Collapsable(Collapsable)
@@ -201,12 +204,11 @@ impl Content {
             if let Some(extension) = extension {
                 let extension = extension.to_str().unwrap();
                 match extension {
-                    "csv" => Ok(Array::from_csv(path).into()),
-                    "png" | "jpg" | "jpeg" => Ok(Content::new_image(path)),
-                    _ => {
-                        let content : Content = serde_json::from_str(&fs::read_to_string(path)?)?;
-                        Ok(content)
-                    }
+                    "csv" =>                   Ok(Array::from_csv(path).into()),
+                    "png" | "jpg" | "jpeg" =>  Ok(Content::new_image(path)),
+                    COLLAPSABLE_EXTENSION =>   Ok(Collapsable::load_from_file(path)?.into()),
+                    TEXT_EXTENSION =>          Ok(Text::load_from_file(path)?.into()),
+                    _ =>                       Err("the file should have the correct extension".into())
                 }
             } else {
                 let content : Content = serde_json::from_str(&fs::read_to_string(path)?)?;
@@ -218,8 +220,8 @@ impl Content {
     }
 }
 
-impl From<Vec<Text>> for Content {
-    fn from(text : Vec<Text>) -> Content {
+impl From<Text> for Content {
+    fn from(text : Text) -> Content {
         Content::Text(text)
     }
 }
@@ -255,26 +257,78 @@ impl Collapsable {
             content
         }
     }
+
+    pub fn save_to_file(&self, dir_path : &str, file_name : &str) -> Result<(), Box<dyn std::error::Error>> {
+        let path = Path::new(dir_path).join(format!("{}.{}", file_name, COLLAPSABLE_EXTENSION));
+        fs::write(path, serde_json::to_string(self)?)?;
+        Ok(())
+    }
+
+    pub fn load_from_file(path : &str) -> Result<Collapsable, Box<dyn std::error::Error>> {
+        let path = Path::new(path);
+        if !path.is_file() {
+            return Err("the path should be a file".into());
+        }
+        if path.extension().unwrap().to_str().unwrap() != COLLAPSABLE_EXTENSION {
+            return Err("the file should have the correct extension".into());
+        }
+        let content : Collapsable = serde_json::from_str(&fs::read_to_string(path)?)?;
+        Ok(content)
+    }
 }
 
-// ************************ TextElement
+// ************************ Text
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
+pub struct Text(Vec<TextContent>);
+
+impl From<Vec<TextContent>> for Text {
+    fn from(content : Vec<TextContent>) -> Text {
+        Text(content)
+    }
+}
+
+impl Text {
+    pub fn save_to_file(&self, dir_path : &str, file_name : &str) -> Result<(), Box<dyn std::error::Error>> {
+        let path = Path::new(dir_path).join(format!("{}.{}", file_name, TEXT_EXTENSION));
+        fs::write(path, serde_json::to_string(self)?)?;
+        Ok(())
+    }
+
+    pub fn load_from_file(path : &str) -> Result<Text, Box<dyn std::error::Error>> {
+        let path = Path::new(path);
+        if !path.is_file() {
+            return Err("the path should be a file".into());
+        }
+        if path.extension().unwrap().to_str().unwrap() != TEXT_EXTENSION {
+            return Err("the file should have the correct extension".into());
+        }
+        let content : Text = serde_json::from_str(&fs::read_to_string(path)?)?;
+        Ok(content)
+    }
+
+    pub fn get_content(&self) -> &Vec<TextContent> {
+        &self.0
+    }
+}
+
 
 /// represent a text element
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub enum Text {
+pub enum TextContent {
     Raw(String),
     Link(TextLink),
 }
 
-impl From<String> for Text {
-    fn from(s : String) -> Text {
-        Text::Raw(s)
+impl From<String> for TextContent {
+    fn from(s : String) -> TextContent {
+        TextContent::Raw(s)
     }
 }
 
-impl From<TextLink> for Text {
-    fn from(l : TextLink) -> Text {
-        Text::Link(l)
+impl From<TextLink> for TextContent {
+    fn from(l : TextLink) -> TextContent {
+        TextContent::Link(l)
     }
 }
 
