@@ -74,7 +74,7 @@ where
 
     // begin by the first one indicating the key used
     if let Some(legend_serie_key) = legend_serie_key {
-        let color = RGBColor(0, 0, 0);
+        let color = RGBColor(255, 255, 255).mix(0.0);
         
         let serie_unlabellized = label_chart
                 .draw_series(
