@@ -11,4 +11,4 @@ pub const FIGURE_CAPTION_FONT_SIZE : u32 = 30;
 
 
 
-pub const RESSOURCES_DIR : &str = "ressources";
+pub const HTML_TEMPLATE : &'static str = include_str!("../../ressources/static.html");

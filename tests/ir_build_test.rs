@@ -45,6 +45,8 @@ fn ir_build_valid_test(){
     assert!(ir.is_ok());
     let ir = ir.unwrap();
     assert_eq!(ir, get_ref_ir());
+    let html = ir.to_html();
+    assert!(html.is_ok());
 }
 
 #[test]

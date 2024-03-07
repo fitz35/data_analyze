@@ -8,6 +8,7 @@ edition = "2021"
 [package.metadata]
 # Include test resources
 test_resources = ["tests/test_data"]
+html_resources = ["ressources/static.html"]
 
 
 [dependencies]

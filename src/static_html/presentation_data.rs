@@ -6,7 +6,7 @@ use std::path::Path;
 use serde::Serialize as SerdeSerialize;
 use serde_derive::{Deserialize, Serialize};
 
-use crate::params::RESSOURCES_DIR;
+use crate::params::HTML_TEMPLATE;
 
 use super::to_html::{ToHtmlDepth, ToTableOfContent};
 
@@ -37,8 +37,7 @@ impl Default for Ir {
 impl Ir {
     /// convert the intermediate representation to html
     pub fn to_html(&self) -> Result<String, Box<dyn std::error::Error>> {
-        let html_template_path = Path::new(RESSOURCES_DIR).join("static.html");
-        let mut html_template = fs::read_to_string(html_template_path)?;
+        let mut html_template = HTML_TEMPLATE.to_string();
         let html_content = self.elements.to_html(1);
         let table_of_content = self.elements.get_table_of_content(1);
         html_template = html_template.replace("<!--table of contents-->", &table_of_content);
