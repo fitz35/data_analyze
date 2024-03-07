@@ -12,6 +12,10 @@ fn calculate_hash<T: Hash>(t: &T) -> u64 {
     s.finish()
 }
 
+fn format_title(title : &str) -> String {
+    title.replace("_", " ")
+}
+
 
 /// This trait is used to convert the data to html and to get the table of content
 pub trait ToHtmlDepth {
@@ -55,7 +59,7 @@ impl ToHtmlDepth for Element {
     fn to_html(&self, depth : usize) -> String {
         let hash = calculate_hash(&self).to_string();
         let mut result = String::new();
-        result.push_str(&format!("<h{} id=\"{}\">{}</h{}>", depth, hash, &self.title, depth));
+        result.push_str(&format!("<h{} id=\"{}\">{}</h{}>", depth, hash, format_title(&self.title), depth));
         for e in self.content.iter() {
             result.push_str(&e.to_html(depth + 1));
         }
@@ -68,10 +72,16 @@ impl ToTableOfContent for Element {
         let hash = calculate_hash(&self).to_string();
         let href = format!("#{}", hash);
         let mut result = String::new();
-        result.push_str(&format!("<li><a href=\"{}\">- {}</a></li>", href, &self.title));
+        result.push_str(&format!("<li><a href=\"{}\">- {}</a></li>", href, format_title(&self.title)));
+        if self.content.len() != 0 {
+            result.push_str("<ul>");
+        }
         for e in self.content.iter() {
             let toc = e.get_table_of_content(depth + 1);
             result.push_str(&toc);
+        }
+        if self.content.len() != 0 {
+            result.push_str("</ul>");
         }
         result
     }
@@ -127,6 +137,7 @@ impl ToHtmlDepth for Text {
         for e in self.get_content().iter() {
             result.push_str(&e.to_html(depth));
         }
+        result = result.replace("\n", "<br>");
         result
     }
 }
