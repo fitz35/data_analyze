@@ -3,6 +3,7 @@
 use std::fs;
 use std::path::Path;
 
+use serde::Serialize;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::params::RESSOURCES_DIR;
@@ -187,7 +188,7 @@ pub enum Content {
     Text(Text),
     Image(String),
     Array(Array),
-    Collapsable(Collapsable)
+    Collapsable(Collapsable<Content>)
 }
 
 impl Content {
@@ -232,8 +233,8 @@ impl From<Array> for Content {
     }
 }
 
-impl From<Collapsable> for Content {
-    fn from(collapsable : Collapsable) -> Content {
+impl From<Collapsable<Content>> for Content {
+    fn from(collapsable : Collapsable<Content>) -> Content {
         Content::Collapsable(collapsable)
     }
 }
@@ -244,27 +245,33 @@ impl From<Collapsable> for Content {
 
 /// represent a collapsable element
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
-pub struct Collapsable {
+pub struct Collapsable<InnerContent> 
+where InnerContent : Serialize
+{
     pub(crate) summary : String,
     /// NOTE : the content of the collapsable element is not a list of elements but a list of content elements, avoid the including in the table of content
-    pub(crate) content : Vec<Content>,
+    pub(crate) content : Vec<InnerContent>,
 }
 
-impl Collapsable {
-    pub fn new(summary : String, content : Vec<Content>) -> Collapsable {
+impl<T> Collapsable<T> 
+where T : Serialize
+{
+    pub fn new(summary : String, content : Vec<T>) -> Collapsable<T> {
         Collapsable {
             summary,
             content
         }
     }
+}
 
+impl Collapsable<Content>{
     pub fn save_to_file(&self, dir_path : &str, file_name : &str) -> Result<(), Box<dyn std::error::Error>> {
         let path = Path::new(dir_path).join(format!("{}.{}", file_name, COLLAPSABLE_EXTENSION));
         fs::write(path, serde_json::to_string(self)?)?;
         Ok(())
     }
 
-    pub fn load_from_file(path : &str) -> Result<Collapsable, Box<dyn std::error::Error>> {
+    pub fn load_from_file(path : &str) -> Result<Collapsable<Content>, Box<dyn std::error::Error>> {
         let path = Path::new(path);
         if !path.is_file() {
             return Err("the path should be a file".into());
@@ -272,7 +279,7 @@ impl Collapsable {
         if path.extension().unwrap().to_str().unwrap() != COLLAPSABLE_EXTENSION {
             return Err("the file should have the correct extension".into());
         }
-        let content : Collapsable = serde_json::from_str(&fs::read_to_string(path)?)?;
+        let content : Collapsable<Content> = serde_json::from_str(&fs::read_to_string(path)?)?;
         Ok(content)
     }
 }
@@ -318,6 +325,7 @@ impl Text {
 pub enum TextContent {
     Raw(String),
     Link(TextLink),
+    Collapsable(Collapsable<TextContent>)
 }
 
 impl From<String> for TextContent {
@@ -329,6 +337,12 @@ impl From<String> for TextContent {
 impl From<TextLink> for TextContent {
     fn from(l : TextLink) -> TextContent {
         TextContent::Link(l)
+    }
+}
+
+impl From<Collapsable<TextContent>> for TextContent {
+    fn from(c : Collapsable<TextContent>) -> TextContent {
+        TextContent::Collapsable(c)
     }
 }
 

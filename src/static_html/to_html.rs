@@ -1,6 +1,8 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+use serde::Serialize;
+
 use super::presentation_data::{Array, Collapsable, Content, ContentElement, Element, ListElement, Text, TextContent, TextLink};
 
 
@@ -106,7 +108,8 @@ impl ToHtmlDepth for Content {
     }
 }
 
-impl ToHtmlDepth for Collapsable {
+impl<T> ToHtmlDepth for Collapsable<T> 
+where T: ToHtmlDepth + Serialize {
     fn to_html(&self, depth : usize) -> String {
         let mut result = String::new();
         result.push_str(&format!("<details><summary>{}</summary>", &self.summary));
@@ -133,6 +136,7 @@ impl ToHtmlDepth for TextContent {
         match self {
             TextContent::Raw(s) => s.to_html(depth),
             TextContent::Link(l) => l.to_html(depth),
+            TextContent::Collapsable(c) => c.to_html(depth),
         }
     }
 }
