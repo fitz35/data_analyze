@@ -3,7 +3,7 @@
 use std::fs;
 use std::path::Path;
 
-use serde::Serialize;
+use serde::Serialize as SerdeSerialize;
 use serde_derive::{Deserialize, Serialize};
 
 use crate::params::RESSOURCES_DIR;
@@ -246,7 +246,7 @@ impl From<Collapsable<Content>> for Content {
 /// represent a collapsable element
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Hash)]
 pub struct Collapsable<InnerContent> 
-where InnerContent : Serialize
+where InnerContent : SerdeSerialize
 {
     pub(crate) summary : String,
     /// NOTE : the content of the collapsable element is not a list of elements but a list of content elements, avoid the including in the table of content
@@ -254,7 +254,7 @@ where InnerContent : Serialize
 }
 
 impl<T> Collapsable<T> 
-where T : Serialize
+where T : SerdeSerialize
 {
     pub fn new(summary : String, content : Vec<T>) -> Collapsable<T> {
         Collapsable {
