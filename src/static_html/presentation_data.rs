@@ -209,7 +209,7 @@ impl Content {
                     "png" | "jpg" | "jpeg" =>  Ok(Content::new_image(path)),
                     COLLAPSABLE_EXTENSION =>   Ok(Collapsable::load_from_file(path)?.into()),
                     TEXT_EXTENSION =>          Ok(Text::load_from_file(path)?.into()),
-                    _ =>                       Err("the file should have the correct extension".into())
+                    _ =>                       Err(format!("the extension {} is not supported for the file {}", extension, path).into())
                 }
             } else {
                 let content : Content = serde_json::from_str(&fs::read_to_string(path)?)?;
@@ -274,10 +274,10 @@ impl Collapsable<Content>{
     pub fn load_from_file(path : &str) -> Result<Collapsable<Content>, Box<dyn std::error::Error>> {
         let path = Path::new(path);
         if !path.is_file() {
-            return Err("the path should be a file".into());
+            return Err(format!("the path should be a file, path : {}", path.to_str().unwrap()).into());
         }
         if path.extension().unwrap().to_str().unwrap() != COLLAPSABLE_EXTENSION {
-            return Err("the file should have the correct extension".into());
+            return Err(format!("the file should have the correct extension, path : {}", path.to_str().unwrap()).into());
         }
         let content : Collapsable<Content> = serde_json::from_str(&fs::read_to_string(path)?)?;
         Ok(content)
@@ -305,10 +305,10 @@ impl Text {
     pub fn load_from_file(path : &str) -> Result<Text, Box<dyn std::error::Error>> {
         let path = Path::new(path);
         if !path.is_file() {
-            return Err("the path should be a file".into());
+            return Err(format!("the path should be a file, path : {}", path.to_str().unwrap()).into());
         }
         if path.extension().unwrap().to_str().unwrap() != TEXT_EXTENSION {
-            return Err("the file should have the correct extension".into());
+            return Err(format!("the file should have the correct extension, path : {}", path.to_str().unwrap()).into());
         }
         let content : Text = serde_json::from_str(&fs::read_to_string(path)?)?;
         Ok(content)
