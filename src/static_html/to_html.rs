@@ -17,7 +17,7 @@ fn format_title(title : &str) -> String {
 }
 
 
-/// This trait is used to convert the data to html and to get the table of content
+/// This trait is used to convert the data to html
 pub trait ToHtmlDepth {
     fn to_html(&self, depth : usize) -> String;
 }
@@ -43,6 +43,9 @@ impl ToHtmlDepth for ListElement {
 impl ToTableOfContent for ListElement {
     fn get_table_of_content(&self, depth : usize) -> String {
         let mut result = String::new();
+        if self.elements.len() == 0 {
+            return result;
+        }
         result.push_str("<ul>");
         for element in self.elements.iter() {
             let toc = element.get_table_of_content(depth);
