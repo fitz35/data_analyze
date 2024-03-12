@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
+#[cfg(feature = "parrallelize")]
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 /// represent a serie with its stats
 #[derive(Debug, Clone)]
 pub struct StatsSerie {
@@ -22,7 +25,17 @@ impl StatsSerie {
             }
         }
 
-        stats.insert(MetricName::Mean, MetricValue::mean(serie.iter().map(|f| *f as f64).sum::<f64>() / serie.len() as f64));
+        #[cfg(not(feature = "parrallelize"))]
+        stats.insert(
+            MetricName::Mean, 
+            MetricValue::mean(serie.iter().map(|f| *f as f64).sum::<f64>() / serie.len() as f64)
+        );
+        #[cfg(feature = "parrallelize")]
+        stats.insert(
+            MetricName::Mean, 
+            MetricValue::mean(serie.par_iter().map(|f| *f as f64).sum::<f64>() / serie.len() as f64)
+        );
+
         let sorted_serie = {
             let mut sorted_serie = serie.clone();
             sorted_serie.sort_by(|a, b| a.partial_cmp(b).unwrap());
