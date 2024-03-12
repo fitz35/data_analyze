@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-
+#[cfg(feature = "parrallelize")]
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use serde_derive::{Deserialize, Serialize};
 
@@ -168,7 +168,26 @@ where
     SampleType : SimpleSample<KeyType>,
     KeyType : SerieKey
 {
+    #[cfg(not(feature = "parrallelize"))]
+    /// Create a new PlottableSamples from a list of file paths
+    /// This function is not parallelized
+    fn new_async_from_paths(file_paths : &Vec<String>) -> Self {
+        let samples = file_paths.iter().flat_map(
+            |path| {
+                if let Ok(sample) = SampleType::new_from_file_path(path) {
+                    Some(sample)
+                } else {
+                    None
+                }
+            }
+        ).collect::<Vec<SampleType>>();
+
+        Self::new(samples)
+    }
+
+
     /// Create a new PlottableSamples from a list of file paths (async)
+    #[cfg(feature = "parrallelize")]
     fn new_async_from_paths(file_paths : &Vec<String>) -> Self {
         let samples = file_paths.par_iter().flat_map(
             |path| {
@@ -191,7 +210,25 @@ where
     SampleType : MultipleSample<KeyType>,
     KeyType : SerieKey
 {
+    #[cfg(not(feature = "parrallelize"))]
+    /// Create a new PlottableSamples from a list of file paths
+    /// This function is not parallelized
+    fn new_async_from_paths(file_paths : &Vec<String>) -> Self {
+        let samples = file_paths.iter().flat_map(
+            |path| {
+                if let Ok(samples) = SampleType::new_from_file_path(path) {
+                    Some(samples)
+                } else {
+                    None
+                }
+            }
+        ).flatten().collect::<Vec<SampleType>>();
+
+        Self::new(samples)
+    }
+
     /// Create a new PlottableSamples from a list of file paths (async)
+    #[cfg(feature = "parrallelize")]
     fn new_async_from_paths(file_paths : &Vec<String>) -> Self {
         let samples = file_paths.par_iter().flat_map(
             |path| {

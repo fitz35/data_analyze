@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 use std::path::Path;
 
+#[cfg(feature = "parrallelize")]
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 use plotters::backend::BitMapBackend;
 use plotters::chart::ChartBuilder;
 use plotters::drawing::IntoDrawingArea;
@@ -108,10 +111,17 @@ where
                 legend_index += 1;
             }
             let color = legend_to_color.get(legend).unwrap();
+            #[cfg(not(feature = "parrallelize"))]
             chart
                 .draw_series(
                     data_for_legend.iter()
                         .map(|(x, y)| Circle::new((*x, *y), 2, color.filled())),
+                )?;
+            #[cfg(feature = "parrallelize")]
+            chart
+                .draw_series(
+                    data_for_legend.par_iter()
+                        .map(|(x, y)| Circle::new((*x, *y), 2, color.filled())).collect::<Vec<_>>(),
                 )?;
         }
     }// end of for each serie

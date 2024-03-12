@@ -5,6 +5,10 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+parrallelize = ["dep:rayon"] # add rayon to dependencies to parallelize
+
+
 [package.metadata]
 # Include test resources
 test_resources = ["tests/test_data"]
@@ -20,7 +24,7 @@ serde_derive = "1.0.159"
 serde_json = "1.0.94"
 csv = "1.3.0"
 
-rayon = "1.9.0"
+rayon = {version = "1.9.0", optional = true}
 # log
 log = "0.4.20"
 test-log = "0.2.14"
