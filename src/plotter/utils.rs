@@ -126,6 +126,6 @@ pub(crate) fn axe_number_formater(x: &f32) -> String {
     if x < -TRESHOLD || (x > -1.0/TRESHOLD && x < 1.0/TRESHOLD) || x > TRESHOLD {
         format!("{:.0e}", x)
     } else {
-        format!("{:.2}", x)
+        format!("{:.3}", x)
     }
 }
