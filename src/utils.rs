@@ -1,7 +1,13 @@
+#[cfg(feature = "parrallelize")]
 use std::sync::Mutex;
 use std::ops::Range;
-
+#[cfg(feature = "parrallelize")]
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
+
+#[cfg(not(feature = "parrallelize"))]
+use std::collections::HashMap;
+
 
 use crate::data::linspace::Linspace;
 
