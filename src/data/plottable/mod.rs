@@ -286,13 +286,23 @@ where
     fn get_number_of_samples(&self) -> usize {
         self.samples.len()
     }
-
+    #[cfg(not(feature = "parrallelize"))]
     fn get_numeric_series(&self, key : &KeyType) -> Vec<f32> {
         self.samples.iter().map(|sample| sample.get_numeric_value(key)).collect()
     }
-
+    #[cfg(not(feature = "parrallelize"))]
     fn get_string_series(&self, key : &KeyType) -> Vec<String> {
         self.samples.iter().map(|sample| sample.get_string_value(key)).collect()
+    }
+
+    #[cfg(feature = "parrallelize")]
+    fn get_numeric_series(&self, key : &KeyType) -> Vec<f32> {
+        self.samples.par_iter().map(|sample| sample.get_numeric_value(key)).collect()
+    }
+
+    #[cfg(feature = "parrallelize")]
+    fn get_string_series(&self, key : &KeyType) -> Vec<String> {
+        self.samples.par_iter().map(|sample| sample.get_string_value(key)).collect()
     }
 }
 

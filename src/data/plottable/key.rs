@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 /// Define a trait for a key of a serie
-pub trait SerieKey : Eq + std::hash::Hash + Copy + Display + Ord{
+pub trait SerieKey : Eq + std::hash::Hash + Copy + Display + Ord + Send + Sync{
     /// get the display name of the serie
     fn get_display_name(&self) -> String;
 
