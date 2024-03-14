@@ -120,6 +120,12 @@ impl From<HashMap<String, Vec<Point>>> for PlotSeries {
     }
 }
 
+impl Into<HashMap<String, Vec<Point>>> for PlotSeries {
+    fn into(self) -> HashMap<String, Vec<Point>> {
+        self.data
+    }
+}
+
 
 /// define a layout for the subplots
 pub struct Layout {

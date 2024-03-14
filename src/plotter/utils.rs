@@ -4,10 +4,11 @@ use plotters::backend::BitMapBackend;
 use plotters::chart::{ChartBuilder, SeriesLabelPosition};
 use plotters::coord::Shift;
 use plotters::drawing::DrawingArea;
-use plotters::element::{Circle, EmptyElement, Text};
-use plotters::series::PointSeries;
+use plotters::element::Circle;
+use std::ops::Range;
 use plotters::style::{Color, Palette, PaletteColor, RGBColor, BLACK, WHITE};
 
+use crate::data::linspace::Linspace;
 use crate::data::plottable::key::SerieKey;
 
 
@@ -127,5 +128,56 @@ pub(crate) fn axe_number_formater(x: &f32) -> String {
         format!("{:.0e}", x)
     } else {
         format!("{:.3}", x)
+    }
+}
+
+const SERIE_DIVISION : usize = 10000;
+
+/// The goal of the function is to compress a dataserie to accelerate the plotting
+/// it will cut the graph into piece en make the average of each piece
+/// NOTE : The function take the borow of the data to avoid the memory allocation
+pub(crate) fn compress_data_serie(to_compress : Vec<(f32, f32)>, range_x : &Range<f32>, range_y : &Range<f32>) -> Vec<(f32, f32)> {
+    // cut the range into SERIE_DIVISION pieces
+    let x_linspace = Linspace::new(range_x.start as f64, range_x.end as f64, SERIE_DIVISION);
+    let y_linspace = Linspace::new(range_y.start as f64, range_y.end as f64, SERIE_DIVISION);
+
+    // create the hashmap to store the data
+    // the key is the index of the piece in the x and y linspace
+    // the value is a tuple with the sum of the x and y and the number of points
+    // use welfort's algorithm
+    let mut result_map : HashMap<(usize, usize), (f32, f32, usize)> = HashMap::new();
+    for (x, y) in to_compress.into_iter() {
+        let x_index = x_linspace.index_of(&(x as f64)).unwrap();
+        let y_index = y_linspace.index_of(&(y as f64)).unwrap();
+        let entry = result_map.entry((x_index, y_index)).or_insert((0.0, 0.0, 0));
+        entry.2 += 1;
+        entry.0 += (x - entry.0) / entry.2 as f32;
+        entry.1 += (y - entry.1) / entry.2 as f32;
+        
+    }
+
+    // create the result vector
+    let mut result : Vec<(f32, f32)> = Vec::new();
+    for (x, y, _) in result_map.values() {
+        result.push((*x, *y));
+    }
+    
+    result
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_empty_dataset() {
+        let to_compress: Vec<(f32, f32)> = Vec::new();
+        let range_x = Range { start: 0.0, end: 10.0 };
+        let range_y = Range { start: 0.0, end: 10.0 };
+
+        let compressed = compress_data_serie(to_compress, &range_x, &range_y);
+
+        assert_eq!(compressed.len(), 0);
     }
 }

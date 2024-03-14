@@ -16,7 +16,7 @@ use crate::data::plottable::key::SerieKey;
 use crate::data::plottable::Plottable;
 use crate::params::{FIGURE_CAPTION_FONT_SIZE, LABEL_HORIZONTAL_SIZE, ONE_FIG_SIZE};
 
-use super::utils::{axe_number_formater, write_legend, CustomPalette};
+use super::utils::{axe_number_formater, compress_data_serie, write_legend, CustomPalette};
 
 
 /// plot the given data
@@ -93,7 +93,7 @@ where
             .margin(5)
             .x_label_area_size(40)
             .y_label_area_size(60)
-            .build_cartesian_2d(range_x, range_y)?;
+            .build_cartesian_2d(range_x.clone(), range_y.clone())?;
 
         chart.configure_mesh()
             .x_desc(x_serie_key.get_display_name().as_str())
@@ -102,25 +102,28 @@ where
             .y_label_formatter(&axe_number_formater)
             .draw()?;
 
+        let hashed_data : HashMap<_, _> = grouped_data.into();
+
 
         // plot the data
-        for (legend, data_for_legend) in grouped_data.get_data().iter() {
+        for (legend, data_for_legend) in hashed_data.into_iter() {
             // update the legend color
             if !legend_to_color.contains_key(legend.to_string().as_str()) { 
                 legend_to_color.insert(legend.to_string(), CustomPalette::pick(legend_index));// loop over the palette
                 legend_index += 1;
             }
-            let color = legend_to_color.get(legend).unwrap();
+            let color = legend_to_color.get(legend.as_str()).unwrap();
+            let compressed_data = compress_data_serie(data_for_legend, &range_x, &range_y);
             #[cfg(not(feature = "parrallelize"))]
             chart
                 .draw_series(
-                    data_for_legend.iter()
+                    compressed_data.iter()
                         .map(|(x, y)| Circle::new((*x, *y), 2, color.filled())),
                 )?;
             #[cfg(feature = "parrallelize")]
             chart
                 .draw_series(
-                    data_for_legend.par_iter()
+                    compressed_data.par_iter()
                         .map(|(x, y)| Circle::new((*x, *y), 2, color.filled())).collect::<Vec<_>>(),
                 )?;
         }
