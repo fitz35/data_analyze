@@ -85,8 +85,9 @@ where
         )
     in series.iter().zip(child_drawing_areas.iter()).enumerate() {
         // group the data by legend
-        let grouped_data = 
+        let mut grouped_data = 
             data.aggregate(x_serie_key, y_serie_key, filters, &legends, &remove_outliers, Some(aggregation_metric))?;
+        grouped_data.compress();
         
         let (range_x, range_y) = grouped_data.get_range();
 

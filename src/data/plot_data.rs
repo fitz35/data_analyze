@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::mem;
 use std::ops::Range;
 
 use crate::stats::stats_serie::{MetricName, StatsSerie};
+use crate::utils::compress_data_serie;
 
 
 
@@ -21,6 +23,22 @@ impl PlotSeries {
         Self {
             data : HashMap::new(),
         }
+    }
+
+    /// compress the data to accelerate the plotting
+    pub fn compress(&mut self) -> &mut Self{
+        let original_data = mem::replace(&mut self.data, HashMap::new()); // take out the map
+
+        let (range_x, range_y) = self.get_range();
+
+        // Transform the data.
+        self.data = original_data.into_iter().map(|(key, serie)| {
+            // Now you can avoid cloning the key, as `key` is owned here due to `into_iter()`.
+            let compressed_serie = compress_data_serie(serie, &range_x, &range_y);
+            (key, compressed_serie) // No need to clone the key.
+        }).collect();
+
+        return self
     }
 
     pub fn add(&mut self, legend : String, point : Point) {

@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::path::Path;
 
-#[cfg(feature = "parrallelize")]
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use plotters::backend::BitMapBackend;
 use plotters::chart::ChartBuilder;
@@ -16,7 +14,7 @@ use crate::data::plottable::key::SerieKey;
 use crate::data::plottable::Plottable;
 use crate::params::{FIGURE_CAPTION_FONT_SIZE, LABEL_HORIZONTAL_SIZE, ONE_FIG_SIZE};
 
-use super::utils::{axe_number_formater, compress_data_serie, write_legend, CustomPalette};
+use super::utils::{axe_number_formater, write_legend, CustomPalette};
 
 
 /// plot the given data
@@ -80,10 +78,12 @@ where
         )
     in series.iter().zip(child_drawing_areas.iter()).enumerate() {
         // group the data by legend
-        let grouped_data = 
+        let mut grouped_data = 
             data.aggregate(x_serie_key, y_serie_key, filters, &legends, &remove_outliers, None)?;
+        grouped_data.compress();
 
         let (range_x, range_y) = grouped_data.get_range();
+
 
         // define the chart
 
@@ -113,18 +113,11 @@ where
                 legend_index += 1;
             }
             let color = legend_to_color.get(legend.as_str()).unwrap();
-            let compressed_data = compress_data_serie(data_for_legend, &range_x, &range_y);
-            #[cfg(not(feature = "parrallelize"))]
+            
             chart
                 .draw_series(
-                    compressed_data.iter()
+                    data_for_legend.iter()
                         .map(|(x, y)| Circle::new((*x, *y), 2, color.filled())),
-                )?;
-            #[cfg(feature = "parrallelize")]
-            chart
-                .draw_series(
-                    compressed_data.par_iter()
-                        .map(|(x, y)| Circle::new((*x, *y), 2, color.filled())).collect::<Vec<_>>(),
                 )?;
         }
     }// end of for each serie
