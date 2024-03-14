@@ -27,10 +27,8 @@ impl PlotSeries {
 
     /// compress the data to accelerate the plotting
     pub fn compress(&mut self) -> &mut Self{
-        let original_data = mem::replace(&mut self.data, HashMap::new()); // take out the map
-
         let (range_x, range_y) = self.get_range();
-
+        let original_data = mem::replace(&mut self.data, HashMap::new()); // take out the map
         // Transform the data.
         self.data = original_data.into_iter().map(|(key, serie)| {
             // Now you can avoid cloning the key, as `key` is owned here due to `into_iter()`.
