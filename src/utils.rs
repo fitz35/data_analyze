@@ -96,4 +96,51 @@ mod tests {
 
         assert_eq!(compressed.len(), 0);
     }
+
+    #[test]
+    fn test_single_point_dataset() {
+        let to_compress = vec![(5.0, 5.0)];
+        let range_x = Range { start: 0.0, end: 10.0 };
+        let range_y = Range { start: 0.0, end: 10.0 };
+
+        let compressed = compress_data_serie(to_compress, &range_x, &range_y);
+
+        assert_eq!(compressed.len(), 1);
+        assert_eq!(compressed[0], (5.0, 5.0));
+    }
+
+    #[test]
+    fn test_multiple_points_single_division() {
+        let to_compress = vec![(1.0, 1.0), (2.0, 2.0)];
+        let range_x = Range { start: 0.0, end: 10.0 };
+        let range_y = Range { start: 0.0, end: 10.0 };
+
+        let compressed = compress_data_serie(to_compress, &range_x, &range_y);
+
+        assert!(compressed.len() == 2);
+    }
+
+    #[test]
+    fn test_points_spanning_multiple_divisions() {
+        let to_compress = vec![(1.0, 1.0), (9.0, 9.0)];
+        let range_x = Range { start: 0.0, end: 10.0 };
+        let range_y = Range { start: 0.0, end: 10.0 };
+
+        let compressed = compress_data_serie(to_compress, &range_x, &range_y);
+
+        assert!(compressed.len() == 2);
+    }
+
+   
+    #[test]
+    fn test_large_dataset() {
+        let to_compress = (0..(2 * SERIE_DIVISION * SERIE_DIVISION)).map(|x| (x as f32 % 10.0, x as f32 % 10.0)).collect();
+        let range_x = Range { start: 0.0, end: 10.0 };
+        let range_y = Range { start: 0.0, end: 10.0 };
+
+        let compressed = compress_data_serie(to_compress, &range_x, &range_y);
+
+        assert!(compressed.len() <= SERIE_DIVISION * SERIE_DIVISION);
+        // Further checks can assess distribution and averaging correctness
+    }
 }
