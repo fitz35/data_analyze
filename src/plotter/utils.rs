@@ -131,7 +131,7 @@ pub(crate) fn axe_number_formater(x: &f32) -> String {
     }
 }
 
-const SERIE_DIVISION : usize = 10000;
+const SERIE_DIVISION : usize = 500;
 
 /// The goal of the function is to compress a dataserie to accelerate the plotting
 /// it will cut the graph into piece en make the average of each piece
