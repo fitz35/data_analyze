@@ -1,3 +1,6 @@
+#[cfg(feature = "parrallelize")]
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator, IndexedParallelIterator};
+
 use crate::data::plottable::key::SerieKey;
 
 
@@ -28,6 +31,7 @@ impl Mask {
         }
     }
 
+    #[cfg(not(feature = "parrallelize"))]
     pub fn apply<U>(&self, data : &Vec<U>) -> Vec<U> where U : Clone {
         let mut filtered_data = Vec::new();
         for (i, d) in data.iter().enumerate() {
@@ -36,6 +40,12 @@ impl Mask {
             }
         }
         filtered_data
+    }
+
+    #[cfg(feature = "parrallelize")]
+    pub fn apply<U>(&self, data : &Vec<U>) -> Vec<U> where U : Clone + Send + Sync {
+
+        data.par_iter().enumerate().filter(|(i, _)| self.mask[*i]).map(|(_, d)| d.clone()).collect()
     }
 }
 
